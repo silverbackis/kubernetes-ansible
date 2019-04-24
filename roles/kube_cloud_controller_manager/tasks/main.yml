@@ -1,0 +1,46 @@
+---
+- name: Create cloud-config configmap for ccm
+  shell: kubectl create configmap cloud-config --from-file=/etc/kubernetes/cloud-config -n kube-system
+  ignore_errors: True
+
+- name: Create CCM manifests directory
+  file: path={{ ansible_env.HOME }}/openstack-cloud-controller-manager state=directory mode=0755
+
+- name: Create CCM manifest file
+  template:
+    src: openstack-cloud-controller-manager-ds.yaml.j2
+    dest: "{{ ansible_env.HOME }}/openstack-cloud-controller-manager/openstack-cloud-controller-manager-ds.yaml"
+
+- name: Create CCM role manifest file
+  copy:
+    src: cloud-controller-manager-roles.yaml
+    dest: "{{ ansible_env.HOME }}/openstack-cloud-controller-manager/cloud-controller-manager-roles.yaml"
+
+- name: Create CCM rolebinding manifest file
+  copy:
+    src: cloud-controller-manager-role-bindings.yaml
+    dest: "{{ ansible_env.HOME }}/openstack-cloud-controller-manager/cloud-controller-manager-role-bindings.yaml"
+
+- name: Install cloud-controller-manager
+  shell: kubectl apply -f {{ ansible_env.HOME }}/openstack-cloud-controller-manager/
+
+- name: Ensure cinder-csi-plugin directory
+  file: path={{ ansible_env.HOME }}/cinder-csi-plugin state=directory mode=0755
+
+- name: Prepare cinder-csi-plugin manifests
+  copy:
+    src: "{{ item }}"
+    dest: "{{ ansible_env.HOME }}/cinder-csi-plugin/{{ item }}"
+  loop:
+    - csi-attacher-cinderplugin.yaml
+    - csi-attacher-rbac.yaml
+    - csi-nodeplugin-cinderplugin.yaml
+    - csi-nodeplugin-rbac.yaml
+    - csi-provisioner-cinderplugin.yaml
+    - csi-provisioner-rbac.yaml
+
+- name: Create cloud-config secret for csi
+  shell: kubectl create secret -n kube-system generic cloud-config --from-literal=cloud.conf="$(cat /etc/kubernetes/cloud-config)" --dry-run -o yaml > {{ ansible_env.HOME }}/cinder-csi-plugin/csi-secret-cinderplugin.yaml
+
+- name: Install cinder-csi-plugin
+  shell: kubectl apply -f {{ ansible_env.HOME }}/cinder-csi-plugin/
