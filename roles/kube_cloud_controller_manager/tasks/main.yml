@@ -8,8 +8,8 @@
 
 - name: Create CCM manifest file
   template:
-    src: openstack-cloud-controller-manager-ds.yaml.j2
-    dest: "{{ ansible_env.HOME }}/openstack-cloud-controller-manager/openstack-cloud-controller-manager-ds.yaml"
+    src: openstack-cloud-controller-manager.yaml.j2
+    dest: "{{ ansible_env.HOME }}/openstack-cloud-controller-manager/openstack-cloud-controller-manager.yaml"
 
 - name: Create CCM role manifest file
   copy:
