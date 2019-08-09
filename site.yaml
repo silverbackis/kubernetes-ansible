@@ -4,15 +4,15 @@
   hosts: localhost
 
   vars:
-    image: 9136e86b-14d9-4127-b3dd-f1cdb18b0dc6
-    network: network1
-    public_network: public
-    key_name: lingxian_pc
-    private_key: /home/vagrant/.ssh/id_rsa
-    flavor: 2ba44887-5fe3-44cc-8bca-e2b60a206a66
+    image: 60292c13-c67e-4421-9177-b0c94a122a0c
+    network: lingxian-net
+    public_network: vlan2803
+    key_name: lingxian_key
+    private_key: /home/lingxiankong/.ssh/id_rsa
+    flavor: 528498bd-254a-42f7-8729-21d20abebc20
     boot_from_vol: false
     security_groups:
-      - default
+      - lingxian_group
     node_prefix: lingxiantest
     # Mater hostname must contain 'master', node hostname contains 'node'
     # Make sure the vm name complies with k8s naming convention, should not
