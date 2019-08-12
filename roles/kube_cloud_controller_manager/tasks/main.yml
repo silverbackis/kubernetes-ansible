@@ -18,22 +18,3 @@
 
 - name: Install cloud-controller-manager
   shell: kubectl apply -f {{ ansible_env.HOME }}/openstack-cloud-controller-manager/
-
-- name: Ensure cinder-csi-plugin directory
-  file: path={{ ansible_env.HOME }}/cinder-csi-plugin state=directory mode=0755
-
-- name: Prepare cinder-csi-plugin manifests
-  copy:
-    src: "{{ item }}"
-    dest: "{{ ansible_env.HOME }}/cinder-csi-plugin/{{ item }}"
-  loop:
-    - cinder-csi-controllerplugin-rbac.yaml
-    - cinder-csi-controllerplugin.yaml
-    - cinder-csi-nodeplugin-rbac.yaml
-    - cinder-csi-nodeplugin.yaml
-
-- name: Create cloud-config secret for csi
-  shell: kubectl create secret -n kube-system generic csi-cloud-config --from-literal=cloud.conf="$(cat /etc/kubernetes/cloud-config)" --dry-run -o yaml > {{ ansible_env.HOME }}/cinder-csi-plugin/csi-secret-cinderplugin.yaml
-
-- name: Install cinder-csi-plugin
-  shell: kubectl apply -f {{ ansible_env.HOME }}/cinder-csi-plugin/

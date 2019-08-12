@@ -34,7 +34,7 @@
     content: |
       {
         "log-driver": "json-file",
-        "exec-opts": ["native.cgroupdriver=cgroupfs"],
+        "exec-opts": ["native.cgroupdriver=systemd"],
         "log-opts": {
           "max-size": "50m"
         }
@@ -43,13 +43,6 @@
     owner: root
     group: root
     mode: 0644
-
-- name: Ensure docker service dir
-  file:
-    path: /etc/systemd/system/docker.service.d
-    state: directory
-    owner: root
-    group: root
 
 - name: Restart docker
   systemd:
