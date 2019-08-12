@@ -23,6 +23,7 @@ spec:
       labels:
         k8s-app: openstack-cloud-controller-manager
     spec:
+      hostNetwork: true
       tolerations:
         - key: node.cloudprovider.kubernetes.io/uninitialized
           value: "true"
@@ -38,6 +39,7 @@ spec:
             - --cloud-provider=openstack
             - --use-service-account-credentials=false
             - --cluster-name={{ cluster_name }}
+            - --leader-elect=false
           volumeMounts:
             - mountPath: /etc/cloud
               name: cloud-config-volume
