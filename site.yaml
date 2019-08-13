@@ -156,6 +156,9 @@
     - name: Build hosts file
       lineinfile: dest=/etc/hosts line="{{ ansible_public_ip }} {{ ansible_hostname }}" state=present
 
+    - name: Disable swap memory
+      shell: swapoff -a
+
   roles:
     - docker
     - k8s_cli
