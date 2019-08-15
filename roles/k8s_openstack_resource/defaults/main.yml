@@ -1,0 +1,19 @@
+---
+reource_prefix: "lingxiank8s"
+
+# NOTE: Only 1 master node is supported for now
+master_node_number: 1
+worker_node_number: 3
+boot_from_vol: false
+image: "6f526ede-0b07-4e7f-be83-84f474ebcd2e"
+key_name: "lingxian_key"
+private_key_file: ""
+flavor: "UKF2-std-2x2"
+
+external_network_name: ""
+subnet_cidr: "10.1.0.0/26"
+subnet_dns_nameservers:
+  - "80.244.179.244"
+  - "81.201.138.244"
+
+pod_ip_range: "192.168.0.0/16"

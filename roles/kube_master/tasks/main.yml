@@ -26,28 +26,30 @@
     replace: '\1KUBELET_KUBECONFIG_ARGS=--cloud-provider=external \2'
   when: check_kubelet.rc != 0
 
-- name: restart kubelet service
-  systemd:
-    state: restarted
-    daemon_reload: yes
-    name: kubelet
+- name: Verify if k8s is already up and running
+  raw: kubectl get node
+  register: check_kubectl
+  ignore_errors: True
 
-- name: Init master
-  shell: kubeadm init --config {{ ansible_env.HOME }}/kubeadm.conf
-  register: kubeadm_init
-
-- fail:
-    msg: "kubeadm init command failed."
-  when: kubeadm_init.stdout.find ("kubeadm join") == -1
-
-- name: Prepare kube config
-  shell: mkdir -p {{ item }}/.kube && cp -a /etc/kubernetes/admin.conf {{ item }}/.kube/config && chmod 755 {{ item }}/.kube/config
-  loop:
-    - "{{ ansible_env.HOME }}"
-    - /home/ubuntu
-
-- name: Allow pod on master
-  shell: kubectl taint nodes --all node-role.kubernetes.io/master-
+- name: Initialize k8s master node
+  block:
+    - name: restart kubelet service
+      systemd:
+        state: restarted
+        daemon_reload: yes
+        name: kubelet
+    - name: Init master
+      shell: kubeadm init --config {{ ansible_env.HOME }}/kubeadm.conf
+      register: kubeadm_init
+    - fail:
+        msg: "kubeadm init command failed."
+      when: kubeadm_init.stdout.find ("kubeadm join") == -1
+    - name: Prepare kube config
+      shell: mkdir -p {{ item }}/.kube && cp -a /etc/kubernetes/admin.conf {{ item }}/.kube/config && chmod 755 {{ item }}/.kube/config
+      loop:
+        - "{{ ansible_env.HOME }}"
+        - /home/ubuntu
+  when: check_kubectl.rc != 0
 
 - name: Install Calico RBAC
   shell: kubectl apply -f {{ item }}
@@ -64,7 +66,7 @@
   replace:
     path: "{{ ansible_env.HOME }}/calico.yaml"
     regexp: '(^.*value: )"192.168.*'
-    replace: '\1"{{ pod_subnet }}"'
+    replace: '\1"{{ pod_ip_range }}"'
 
 - name: Install Calico
   shell: kubectl apply -f {{ ansible_env.HOME }}/calico.yaml

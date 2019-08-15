@@ -11,7 +11,7 @@ kind: ClusterConfiguration
 clusterName: "lingxian-k8s"
 kubernetesVersion: v{{ k8s_version }}
 networking:
-  podSubnet: {{ pod_subnet }}
+  podSubnet: {{ pod_ip_range }}
 imageRepository: "k8s.gcr.io"
 useHyperKubeImage: true
 apiServer:

@@ -1,0 +1,188 @@
+---
+- name: Create k8s network
+  os_network:
+    name: "{{ reource_prefix }}-network"
+
+- name: Create k8s network subnet
+  os_subnet:
+    network_name: "{{ reource_prefix }}-network"
+    name: "{{ reource_prefix }}-subnet"
+    cidr: "{{ subnet_cidr }}"
+    dns_nameservers: "{{ subnet_dns_nameservers }}"
+  register: subnet
+
+- name: Create OpenStack router for k8s cluster
+  os_router:
+    name: "{{ reource_prefix }}-router"
+    network: "{{ external_network_name }}"
+    interfaces:
+      - "{{ reource_prefix }}-subnet"
+
+- name: Create k8s security groups
+  os_security_group:
+    name: "{{ reource_prefix }}-{{ item }}"
+    state: present
+  loop:
+     - master
+     - worker
+
+- name: Security group rules for master
+  os_security_group_rule:
+    security_group: "{{ reource_prefix }}-master"
+    protocol: tcp
+    port_range_min: "{{ item }}"
+    port_range_max: "{{ item }}"
+    remote_ip_prefix: 0.0.0.0/0
+  loop: [22, 80, 443, 6443]
+
+- name: Allow traffic to master from master and worker
+  os_security_group_rule:
+    security_group: "{{ reource_prefix }}-master"
+    remote_group: "{{ reource_prefix }}-{{ item }}"
+  loop:
+    - master
+    - worker
+
+- name: Security group rules for worker - ssh
+  os_security_group_rule:
+    security_group: "{{ reource_prefix }}-worker"
+    protocol: tcp
+    port_range_min: 22
+    port_range_max: 22
+    remote_ip_prefix: 0.0.0.0/0
+
+- name: Security group rules for worker - service node ports
+  os_security_group_rule:
+    security_group: "{{ reource_prefix }}-worker"
+    protocol: tcp
+    port_range_min: 30000
+    port_range_max: 32767
+    remote_ip_prefix: "{{ subnet_cidr }}"
+
+- name: Allow traffic to worker from master and worker
+  os_security_group_rule:
+    security_group: "{{ reource_prefix }}-worker"
+    remote_group: "{{ reource_prefix }}-{{ item }}"
+  loop:
+    - master
+    - worker
+
+# Create ports separately in order to setup allowed_address_pairs
+- name: Create ports for master
+  os_port:
+    state: present
+    name: "{{ reource_prefix }}-master-{{ item }}"
+    network: "{{ reource_prefix }}-network"
+    security_groups: "{{ reource_prefix }}-master"
+    allowed_address_pairs:
+      - ip_address: "{{ pod_ip_range }}"
+  loop: "{{ range(0, master_node_number|int)|list }}"
+
+- name: Create ports for worker
+  os_port:
+    state: present
+    name: "{{ reource_prefix }}-worker-{{ item }}"
+    network: "{{ reource_prefix }}-network"
+    security_groups: "{{ reource_prefix }}-worker"
+    allowed_address_pairs:
+      - ip_address: "{{ pod_ip_range }}"
+  loop: "{{ range(0, worker_node_number|int)|list }}"
+
+- name: Create k8s master nodes
+  os_server:
+    state: present
+    name: "{{ reource_prefix }}-master-{{ item }}"
+    boot_from_volume: "{{ boot_from_vol | bool }}"
+    image: "{{ image }}"
+    volume_size: 15
+    key_name: "{{ key_name }}"
+    nics: port-name={{ reource_prefix }}-master-{{ item }}
+    flavor: "{{ flavor }}"
+    terminate_volume: true
+    # Do not allocate floating ip
+    auto_ip: false
+    userdata: |
+      #cloud-config
+      manage_etc_hosts: "localhost"
+  loop: "{{ range(0, master_node_number|int)|list }}"
+
+- name: Create k8s worker nodes
+  os_server:
+    state: present
+    name: "{{ reource_prefix }}-worker-{{ item }}"
+    boot_from_volume: "{{ boot_from_vol | bool }}"
+    image: "{{ image }}"
+    volume_size: 15
+    key_name: "{{ key_name }}"
+    nics: port-name={{ reource_prefix }}-worker-{{ item }}
+    flavor: "{{ flavor }}"
+    terminate_volume: true
+    # Do not allocate floating ip
+    auto_ip: false
+    userdata: |
+      #cloud-config
+      manage_etc_hosts: "localhost"
+  loop: "{{ range(0, worker_node_number|int)|list }}"
+
+- name: Associate floating ip for master
+  os_floating_ip:
+    state: present
+    reuse: yes
+    network: "{{ external_network_name }}"
+    server: "{{ reource_prefix }}-master-{{ item }}"
+  loop: "{{ range(0, master_node_number|int)|list }}"
+
+- name: Associate floating ip for worker
+  os_floating_ip:
+    state: present
+    reuse: yes
+    network: "{{ external_network_name }}"
+    server: "{{ reource_prefix }}-worker-{{ item }}"
+  loop: "{{ range(0, worker_node_number|int)|list }}"
+
+- name: Gather facts about vms
+  os_server_facts:
+    server: "{{ reource_prefix }}-*"
+
+- name: Wait for ssh ready for vms
+  wait_for: port=22 host={{ item.public_v4 }} search_regex=OpenSSH timeout=300 delay=5
+  with_items: "{{ openstack_servers }}"
+
+- name: Add VMs to inventory
+  add_host:
+    name: "{{ item.name }}"
+    groups: k8s_hosts
+    ansible_user: ubuntu
+    ansible_host: "{{ item.public_v4 }}"
+    ansible_local_ip: "{{ item.private_v4 }}"
+    ansible_public_ip: "{{ item.public_v4 }}"
+    ansible_ssh_private_key_file: "{{ private_key_file }}"
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+    subnet_id: "{{ subnet.id }}"
+  with_items: "{{ openstack_servers }}"
+
+- name: Setup master group
+  add_host:
+    name: "{{ item.name }}"
+    groups: k8s_master
+    ansible_user: ubuntu
+    ansible_host: "{{ item.public_v4 }}"
+    ansible_local_ip: "{{ item.private_v4 }}"
+    ansible_public_ip: "{{ item.public_v4 }}"
+    ansible_ssh_private_key_file: "{{ private_key_file }}"
+    subnet_id: "{{ subnet.id }}"
+  when: item.name | regex_search('(master)')
+  with_items: "{{ openstack_servers }}"
+
+- name: Setup nodes group
+  add_host:
+    name: "{{ item.name }}"
+    groups: k8s_nodes
+    ansible_user: ubuntu
+    ansible_host: "{{ item.public_v4 }}"
+    ansible_local_ip: "{{ item.private_v4 }}"
+    ansible_public_ip: "{{ item.public_v4 }}"
+    ansible_ssh_private_key_file: "{{ private_key_file }}"
+    subnet_id: "{{ subnet.id }}"
+  when: item.name | regex_search('(worker)')
+  with_items: "{{ openstack_servers }}"

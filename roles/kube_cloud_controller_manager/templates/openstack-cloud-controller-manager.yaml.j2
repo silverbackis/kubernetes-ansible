@@ -38,7 +38,7 @@ spec:
             - --cloud-config=/etc/cloud/cloud-config
             - --cloud-provider=openstack
             - --use-service-account-credentials=false
-            - --cluster-name={{ cluster_name }}
+            - --cluster-name={{ reource_prefix }}-cluster
             - --leader-elect=false
           volumeMounts:
             - mountPath: /etc/cloud

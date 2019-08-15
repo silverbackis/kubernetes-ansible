@@ -4,103 +4,19 @@
   hosts: localhost
 
   vars:
-    image: 60292c13-c67e-4421-9177-b0c94a122a0c
-    network: lingxian-net
-    public_network: vlan2803
-    key_name: lingxian_key
-    private_key: /home/lingxiankong/.ssh/id_rsa
-    flavor: 528498bd-254a-42f7-8729-21d20abebc20
+    reource_prefix: "lingxiank8s"
+    worker_node_number: 2
     boot_from_vol: false
-    security_groups:
-      - lingxian_group
-    node_prefix: lingxiantest
-    # Mater hostname must contain 'master', node hostname contains 'node'
-    # Make sure the vm name complies with k8s naming convention, should not
-    # contain '_'
-    node_names:
-      - master
-      - node1
-    pod_subnet: 192.168.0.0/16
+    image: 6f526ede-0b07-4e7f-be83-84f474ebcd2e
+    key_name: "lingxian_key"
+    private_key_file: "/home/lingxiankong/.ssh/id_rsa"
+    flavor: UKF2-std-2x2
+    external_network_name: "vlan2803"
+    subnet_cidr: "10.1.0.0/26"
+    pod_ip_range: 192.168.0.0/16
 
-  tasks:
-    # Create ports separately in order to setup allowed_address_pairs
-    - name: Create ports
-      os_port:
-        state: present
-        name: "{{ node_prefix }}-k8s-{{ item }}"
-        network: "{{ network }}"
-        security_groups: "{{ security_groups }}"
-        allowed_address_pairs:
-          - ip_address: "{{ pod_subnet }}"
-      with_items: "{{ node_names }}"
-
-    - name: Create VMs
-      os_server:
-        state: present
-        name: "{{ node_prefix }}-k8s-{{ item }}"
-        boot_from_volume: "{{ boot_from_vol | bool }}"
-        image: "{{ image }}"
-        volume_size: 15
-        key_name: "{{ key_name }}"
-        nics: port-name={{ node_prefix }}-k8s-{{ item }}
-        flavor: "{{ flavor }}"
-        terminate_volume: true
-        # Do not allocate floating ip
-        auto_ip: false
-      with_items: "{{ node_names }}"
-
-    - name: Associate floating ip if needed
-      os_floating_ip:
-        state: present
-        reuse: yes
-        network: "{{ public_network }}"
-        server: "{{ node_prefix }}-k8s-{{ item }}"
-      with_items: "{{ node_names }}"
-      when: public_network is defined
-
-    - name: Gather facts about vms
-      os_server_facts:
-        server: "{{ node_prefix }}-k8s-*"
-
-    - name: Wait for ssh ready
-      wait_for: port=22 host="{{ item.private_v4 if public_network is undefined else item.public_v4 }}" search_regex=OpenSSH timeout=300 delay=5
-      with_items: "{{ openstack_servers }}"
-
-    - name: Add VMs to inventory
-      add_host:
-        name: "{{ item.name }}"
-        groups: k8s_hosts
-        ansible_user: ubuntu
-        ansible_host: "{{ item.private_v4 if public_network is undefined else item.public_v4 }}"
-        ansible_local_ip: "{{ item.private_v4 }}"
-        ansible_public_ip: "{{ item.public_v4 }}"
-        ansible_ssh_private_key_file: "{{ private_key }}"
-        ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
-      with_items: "{{ openstack_servers }}"
-
-    - name: Setup master group
-      add_host:
-        name: "{{ item.name }}"
-        groups: k8s_master
-        ansible_user: ubuntu
-        ansible_host: "{{ item.private_v4 if public_network is undefined else item.public_v4 }}"
-        ansible_local_ip: "{{ item.private_v4 }}"
-        ansible_public_ip: "{{ item.public_v4 }}"
-        ansible_ssh_private_key_file: "{{ private_key }}"
-      when: item.name | regex_search('(master)')
-      with_items: "{{ openstack_servers }}"
-
-    - name: Setup nodes group
-      add_host:
-        name: "{{ item.name }}"
-        groups: k8s_nodes
-        ansible_user: ubuntu
-        ansible_host: "{{ item.private_v4 if public_network is undefined else item.public_v4 }}"
-        ansible_local_ip: "{{ item.private_v4 }}"
-        ansible_public_ip: "{{ item.public_v4 }}"
-        ansible_ssh_private_key_file: "{{ private_key }}"
-      when: item.name | regex_search('(node)')
-      with_items: "{{ openstack_servers }}"
+  roles:
+    - k8s_openstack_resource
 
 - name: Prepare k8s hosts
   hosts: k8s_hosts
@@ -143,6 +59,9 @@
           - libssl-dev
           - zlib1g-dev
           - jq
+          - net-tools
+          - atop
+          - snapd
 
     - name: Install pypi libraries
       pip:
@@ -154,7 +73,7 @@
           - httpie
 
     - name: Build hosts file
-      lineinfile: dest=/etc/hosts line="{{ ansible_public_ip }} {{ ansible_hostname }}" state=present
+      lineinfile: dest=/etc/hosts line="{{ ansible_local_ip }} {{ ansible_hostname }}" state=present
 
     - name: Disable swap memory
       shell: swapoff -a
@@ -163,7 +82,7 @@
     - docker
     - k8s_cli
 
-- import_playbook: reset_k8s.yaml rebuild={{ rebuild }}
+- import_playbook: reset_k8s.yaml rebuild={{ rebuild | default(false) }}
 
 - name: Set up k8s master
   hosts: k8s_master
@@ -183,7 +102,7 @@
   roles:
     - kube_node
 
-- name: Set up cloud-controller-manager and cinder-csi-plugin
+- name: Set up cloud-controller-manager
   hosts: k8s_master
   become: true
   become_method: sudo
@@ -191,3 +110,18 @@
 
   roles:
     - kube_cloud_controller_manager
+
+- name: Clean up the installation
+  hosts: localhost
+
+  vars:
+    remove_worker_floatingip: false
+
+  tasks:
+    - name: Remove worker node floating IP if needed
+      os_floating_ip:
+        state: absent
+        purge: yes
+        server: "{{ reource_prefix }}-worker-{{ item }}"
+      loop: "{{ range(0, worker_node_number|int)|list }}"
+      when: remove_worker_floatingip
