@@ -73,7 +73,8 @@
     state: present
     name: "{{ reource_prefix }}-master-{{ item }}"
     network: "{{ reource_prefix }}-network"
-    security_groups: "{{ reource_prefix }}-master"
+    security_groups:
+      - "{{ reource_prefix }}-master"
     allowed_address_pairs:
       - ip_address: "{{ pod_ip_range }}"
   loop: "{{ range(0, master_node_number|int)|list }}"
@@ -83,7 +84,8 @@
     state: present
     name: "{{ reource_prefix }}-worker-{{ item }}"
     network: "{{ reource_prefix }}-network"
-    security_groups: "{{ reource_prefix }}-worker"
+    security_groups:
+      - "{{ reource_prefix }}-worker"
     allowed_address_pairs:
       - ip_address: "{{ pod_ip_range }}"
   loop: "{{ range(0, worker_node_number|int)|list }}"
@@ -97,6 +99,8 @@
     volume_size: 15
     key_name: "{{ key_name }}"
     nics: port-name={{ reource_prefix }}-master-{{ item }}
+    security_groups:
+      - "{{ reource_prefix }}-master"
     flavor: "{{ flavor }}"
     terminate_volume: true
     # Do not allocate floating ip
@@ -115,6 +119,8 @@
     volume_size: 15
     key_name: "{{ key_name }}"
     nics: port-name={{ reource_prefix }}-worker-{{ item }}
+    security_groups:
+      - "{{ reource_prefix }}-worker"
     flavor: "{{ flavor }}"
     terminate_volume: true
     # Do not allocate floating ip
