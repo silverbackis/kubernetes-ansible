@@ -135,3 +135,4 @@
   roles:
     - addons/helm
     - addons/nginx-ingress-controller
+    - addons/cert-manager
