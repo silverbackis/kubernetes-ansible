@@ -133,3 +133,5 @@
     - addons/helm
     - addons/nginx-ingress-controller
     - addons/cert-manager
+    - addons/cinder-storage
+    - addons/k8s-dashboard

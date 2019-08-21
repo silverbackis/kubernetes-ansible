@@ -1,0 +1,20 @@
+---
+- name: Install dashboard
+  shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/{{ dashboard_version }}/aio/deploy/recommended.yaml
+
+- name: Ensure k8s-dashboard addon directory
+  file: path={{ ansible_env.HOME }}/addons/k8s-dashboard state=directory mode=0755
+
+- name: Copy manifest template files
+  template:
+    src: "{{ item }}.j2"
+    dest: "{{ ansible_env.HOME }}/addons/k8s-dashboard/{{ item }}"
+  loop:
+    - dashboard_ingress.yaml
+    - dashboard_user.yaml
+
+- name: Create k8s dashboard ingress
+  shell: kubectl apply -f {{ ansible_env.HOME }}/addons/k8s-dashboard/dashboard_ingress.yaml
+
+- name: Create k8s dashboard user
+  shell: kubectl apply -f {{ ansible_env.HOME }}/addons/k8s-dashboard/dashboard_user.yaml
