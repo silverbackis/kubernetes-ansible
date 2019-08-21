@@ -105,7 +105,6 @@
   become: true
   become_method: sudo
   gather_facts: true
-
   roles:
     - kube_cloud_controller_manager
 

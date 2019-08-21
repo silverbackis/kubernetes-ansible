@@ -3,3 +3,5 @@ cert_manager_url: https://github.com/jetstack/cert-manager/releases/download/v0.
 ca_email: lingxian.kong.nz@gmail.com
 ca_name: letsencrypt-staging
 ca_server_url: https://acme-staging-v02.api.letsencrypt.org/directory
+ca_server_url_prod: https://acme-v02.api.letsencrypt.org/directory
+ca_name_prod: letsencrypt-prod

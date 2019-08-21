@@ -9,6 +9,7 @@
   loop:
     - namespace.yaml
     - cluster_issuer.yaml
+    - cluster_issuer_prod.yaml
 
 - name: Create cert-manager namespace
   shell: kubectl apply -f {{ ansible_env.HOME }}/addons/cert-manager/namespace.yaml
@@ -27,6 +28,15 @@
 
 - name: Make sure the CA secret is created
   shell: kubectl -n cert-manager get secret | grep {{ ca_name }} | wc -l
+  register: check_secret
+  until: check_secret.stdout|int == 1
+  retries: 15
+
+- name: Create cluster CA (production)
+  shell: kubectl apply -f {{ ansible_env.HOME }}/addons/cert-manager/cluster_issuer_prod.yaml
+
+- name: Make sure the CA production secret is created
+  shell: kubectl -n cert-manager get secret | grep {{ ca_name_prod }} | wc -l
   register: check_secret
   until: check_secret.stdout|int == 1
   retries: 15
