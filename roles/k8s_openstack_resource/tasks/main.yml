@@ -101,7 +101,7 @@
     nics: port-name={{ reource_prefix }}-master-{{ item }}
     security_groups:
       - "{{ reource_prefix }}-master"
-    flavor: "{{ flavor }}"
+    flavor: "{{ flavor_master }}"
     terminate_volume: true
     # Do not allocate floating ip
     auto_ip: false
@@ -121,7 +121,7 @@
     nics: port-name={{ reource_prefix }}-worker-{{ item }}
     security_groups:
       - "{{ reource_prefix }}-worker"
-    flavor: "{{ flavor }}"
+    flavor: "{{ flavor_worker }}"
     terminate_volume: true
     # Do not allocate floating ip
     auto_ip: false

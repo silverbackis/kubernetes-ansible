@@ -4,13 +4,14 @@
   hosts: localhost
 
   vars:
-    reource_prefix: "lingxiank8s"
+    reource_prefix: "sbwa"
     worker_node_number: 2
     boot_from_vol: false
     image: 6f526ede-0b07-4e7f-be83-84f474ebcd2e
-    key_name: "lingxian_key"
-    private_key_file: "/home/lingxiankong/.ssh/id_rsa"
-    flavor: UKF2-std-2x2
+    key_name: "mac-pro"
+    private_key_file: "~/.ssh/id_rsa"
+    flavor_master: "UKF2-std-8x8"
+    flavor_worker: "UKF2-std-2x2"
     external_network_name: "vlan2803"
     subnet_cidr: "10.1.0.0/26"
     pod_ip_range: 192.168.0.0/16

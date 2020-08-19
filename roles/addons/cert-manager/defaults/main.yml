@@ -1,6 +1,7 @@
 ---
-cert_manager_url: https://github.com/jetstack/cert-manager/releases/download/v0.8.1/cert-manager-no-webhook.yaml
-ca_email: lingxian.kong.nz@gmail.com
+# https://github.com/jetstack/cert-manager/releases/download/v0.8.1/cert-manager-no-webhook.yaml
+cert_manager_url: https://github.com/jetstack/cert-manager/releases/download/v0.16.1/cert-manager.yaml
+ca_email: info@silverback.is
 ca_name: letsencrypt-staging
 ca_server_url: https://acme-staging-v02.api.letsencrypt.org/directory
 ca_server_url_prod: https://acme-v02.api.letsencrypt.org/directory

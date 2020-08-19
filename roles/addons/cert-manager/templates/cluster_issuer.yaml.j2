@@ -1,16 +1,20 @@
 ---
-apiVersion: certmanager.k8s.io/v1alpha1
-kind: ClusterIssuer
+apiVersion: cert-manager.io/v1alpha2
+kind: Issuer
 metadata:
- name: {{ ca_name }}
+  name: {{ ca_name }}
+  namespace: cert-manager
 spec:
- acme:
-   # The ACME server URL
-   server: {{ ca_server_url }}
-   # Email address used for ACME registration
-   email: {{ ca_email }}
-   # Name of a secret used to store the ACME account private key
-   privateKeySecretRef:
-     name: {{ ca_name }}
-   # Enable the HTTP-01 challenge provider
-   http01: {}
+  acme:
+    # The ACME server URL
+    server: {{ ca_server_url }}
+    # Email address used for ACME registration
+    email: {{ ca_email }}
+    # Name of a secret used to store the ACME account private key
+    privateKeySecretRef:
+      name: {{ ca_name }}
+    # Enable the HTTP-01 challenge provider
+    solvers:
+    - http01:
+        ingress:
+          class:  nginx

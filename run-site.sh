@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 
 source ./openrc
+ssh-add ~/.ssh/id_rsa
 
+# ~/Library/Python/2.7/bin/ansible-playbook
 # for user uuid run `openstack user show <username>`
 ansible-playbook site.yaml -e "reource_prefix=sbwa \
 key_name=mac-pro \
-flavor=UKF2-std-2x2 \
-image=6f526ede-0b07-4e7f-be83-84f474ebcd2e \
+flavor_master=UKF2-std-8x8 \
+flavor_worker=UKF2-std-2x2 \
+image=af97568c-e513-424d-823e-d95caee94554 \
 external_network_name=vlan2803 \
 worker_node_number=1 \
 auth_url=$OS_AUTH_URL \

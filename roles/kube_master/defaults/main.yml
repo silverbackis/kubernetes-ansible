@@ -1,11 +1,11 @@
 ---
-k8s_version: "1.14.1"
+k8s_version: "1.18.8"
 pod_ip_range: "192.168.0.0/16"
 
 auth_url: http://192.168.121.15/identity/v3/
-user_id: 3fd32295751a41aca601021eba681a29
+user_id: 037536f060594d60bdadaa71d060c17f
 password: password
-tenant_id: 84ce53873abe4d22a6f2491879e76048
+tenant_id: 7f2e98177ca848cf8465d7827d28b0d8
 region: RegionOne
-subnet_id: 1740cd57-62ab-4f7f-a853-2038561060d1
+subnet_id: 4ebbb7fa-0a9f-4db3-9a0f-36e8c974a2a7
 support_octavia: yes

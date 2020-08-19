@@ -58,7 +58,7 @@
 
 - name: Download calico manifest file if needed
   get_url:
-    url: https://docs.projectcalico.org/v3.1/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+    url: https://docs.projectcalico.org/v3.12/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
     dest: "{{ ansible_env.HOME }}/calico.yaml"
     force: no
 

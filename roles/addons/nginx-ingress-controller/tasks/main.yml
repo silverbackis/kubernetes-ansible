@@ -9,17 +9,23 @@
     force: yes
 
 - name: Check if the helm nginx-ingress is deployed
-  shell: helm list | grep nginx-ingress
+  shell: helm list --namespace=nginx-ingress | grep nginx-ingress
   register: check_nginx_ingress
   ignore_errors: True
 
 - name: Install nginx-ingress-controller
-  shell: helm install stable/nginx-ingress --name nginx-ingress --namespace nginx-ingress -f {{ ansible_env.HOME }}/addons/nginx-ingress-controller/values.yaml
+  block:
+    - name: Download nginx helm repository
+      shell: helm repo add nginx-stable https://helm.nginx.com/stable
+    - name: Update helm repository
+      shell: helm repo update
+    - name: Install nginx ingress
+      shell: helm install controller nginx-stable/nginx-ingress --create-namespace --namespace nginx-ingress -f {{ ansible_env.HOME }}/addons/nginx-ingress-controller/values.yaml
   when: check_nginx_ingress.rc != 0
 
 - name: Wait for nginx-ingress-controller service
-  shell: kubectl get svc nginx-ingress-controller | grep pending
-  ignore_errors: True
+  shell: kubectl get svc controller-nginx-ingress --namespace nginx-ingress | grep pending
   register: check_service
   until: check_service.rc != 0
-  retries: 180
+  retries: 15
+  ignore_errors: True
