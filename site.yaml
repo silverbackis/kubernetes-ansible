@@ -136,3 +136,4 @@
     - addons/cert-manager
     - addons/cinder-storage
     - addons/k8s-dashboard
+    - addons/mysql

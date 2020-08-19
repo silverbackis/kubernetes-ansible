@@ -1,0 +1,28 @@
+---
+- name: Ensure mysql directory
+  file: path={{ ansible_env.HOME }}/addons/mysql state=directory mode=0755
+
+- name: Copy manifest template files
+  template:
+    src: "{{ item }}.j2"
+    dest: "{{ ansible_env.HOME }}/addons/mysql/{{ item }}"
+  loop:
+    - mysql-secret.yaml
+
+- name: Create mysql manifest files
+  copy:
+    src: "{{ item }}"
+    dest: "{{ ansible_env.HOME }}/addons/mysql/{{ item }}"
+    force: yes
+  loop:
+    - mysql-namespace.yaml
+    - mysql-deployment.yaml
+    - mysql-ingress.yaml
+    - mysql-nodeport.yaml
+    - mysql-pv.yaml
+
+- name: Create mysql namespace
+  shell: kubectl apply -f {{ ansible_env.HOME }}/addons/mysql/mysql-namespace.yaml
+
+- name: Deploy mysql
+  shell: kubectl apply -f {{ ansible_env.HOME }}/addons/mysql

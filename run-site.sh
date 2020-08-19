@@ -20,4 +20,5 @@ region=$OS_REGION_NAME \
 private_key_file=$HOME/.ssh/id_rsa \
 support_octavia=no \
 remove_worker_floatingip=true \
+mysql_password=$MYSQL_PASSWORD \
 ca_email=info@silverback.is"
