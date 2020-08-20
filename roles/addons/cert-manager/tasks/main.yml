@@ -21,7 +21,7 @@
   - name: Update helm repository
     shell: helm repo update
   - name: Install cert-manager
-    shell: helm install cert-manager jetstack/cert-manager --namespace cert-manager --version v0.16.1 --set installCRDs=true
+    shell: helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --version v0.16.1 --set installCRDs=true
 
 - name: Wait for cert-manager up and running
   shell: kubectl -n cert-manager get po | grep Running | wc -l
