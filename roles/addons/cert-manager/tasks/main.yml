@@ -13,6 +13,7 @@
 
 - name: Create cert-manager namespace
   shell: kubectl create namespace cert-manager
+  ignore_errors: True
 
 - name: Install cert-manager
   block:
@@ -21,7 +22,10 @@
   - name: Update helm repository
     shell: helm repo update
   - name: Install cert-manager
-    shell: helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --version v0.16.1 --set installCRDs=true
+    shell: helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --version v0.16.1
+  # Installing CRDs with kubectl, as https://cert-manager.io/docs/installation/kubernetes/ mentioned, "If you're using a helm version based on Kubernetes v1.18 or below (Helm v3.2) installCRDs will not work with cert-manager v0.16"
+  - name: Install CRD manually
+    shell: kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.16.1/cert-manager.crds.yaml
 
 - name: Wait for cert-manager up and running
   shell: kubectl -n cert-manager get po | grep Running | wc -l
