@@ -1,2 +1,2 @@
 ---
-tiller_url: https://get.helm.sh/helm-v3.3.0-linux-amd64.tar.gz
+tiller_url: https://get.helm.sh/helm-v3.4.1-linux-amd64.tar.gz

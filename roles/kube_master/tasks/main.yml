@@ -45,7 +45,7 @@
         msg: "kubeadm init command failed."
       when: kubeadm_init.stdout.find ("kubeadm join") == -1
     - name: Prepare kube config
-      shell: mkdir -p {{ item }}/.kube && cp -a /etc/kubernetes/admin.conf {{ item }}/.kube/config && chmod 755 {{ item }}/.kube/config
+      shell: mkdir -p {{ item }}/.kube && cp -a /etc/kubernetes/admin.conf {{ item }}/.kube/config && chmod 700 {{ item }}/.kube/config
       loop:
         - "{{ ansible_env.HOME }}"
         - /home/ubuntu
