@@ -16,7 +16,7 @@
     force: yes
   loop:
     - mysql-namespace.yaml
-    - mysql-deployment.yaml
+    - mysql-ss.yaml
     - mysql-ingress.yaml
     - mysql-nodeport.yaml
     - mysql-pv.yaml
